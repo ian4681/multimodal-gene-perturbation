@@ -132,7 +132,7 @@
 </head>
 <body>
 
-<button id="lang-btn" onclick="toggleLang()">中文</button>
+<button id="lang-btn" onclick="toggleLang()">切换语言：中文</button>
 
 <!-- ══════════════════════════════════════════ HEADER -->
 <header>
@@ -641,7 +641,7 @@ Dropout:0.3 | LR:1e-3 | WD:1e-4</div>
   function toggleLang() {
     currentLang = currentLang === 'en' ? 'zh' : 'en';
     document.body.className = currentLang === 'zh' ? 'lang-zh' : '';
-    document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
+    document.getElementById('lang-btn').textContent = currentLang === 'en' ? '切换语言：中文' : 'Switch language: English';
     document.getElementById('svg-en').style.display = currentLang === 'zh' ? 'none' : 'block';
     document.getElementById('svg-zh').style.display = currentLang === 'zh' ? 'block' : 'none';
   }
