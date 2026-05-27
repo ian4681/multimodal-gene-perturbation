@@ -1,0 +1,9 @@
+*.pkl
+*.pt
+*.pth
+*.fasta.gz
+*.obo
+*.gaf.gz
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cancer Gene Perturbation Effect Prediction</title>
+<style>
+  :root {
+    --navy: #0f2044;
+    --navy-light: #1a3060;
+    --accent: #0ea5e9;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(15,32,68,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: white;
+    padding: 64px 24px 48px;
+    text-align: center;
+  }
+  header .label {
+    display: inline-block;
+    background: rgba(14,165,233,0.25);
+    color: #7dd3fc;
+    border: 1px solid rgba(14,165,233,0.4);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-size: clamp(22px, 4vw, 38px);
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    max-width: 820px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  header p.subtitle {
+    font-size: 17px;
+    color: #94a3b8;
+    max-width: 640px;
+    margin: 0 auto 32px;
+  }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .badge {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    color: white;
+  }
+  .badge span { color: #38bdf8; font-weight: 700; font-size: 18px; }
+  .btn {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #0284c7; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    margin-left: 10px;
+    color: #cbd5e1;
+  }
+  .btn-outline:hover { background: rgba(255,255,255,0.08); }
+
+  /* ── Main layout ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 48px 20px; }
+
+  section { margin-bottom: 56px; }
+  section > h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  section > h2 .num {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    font-size: 15px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Overview cards ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .overview-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+  }
+  .overview-card h3 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .overview-card .val { font-size: 26px; font-weight: 700; color: var(--navy); }
+  .overview-card .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Pipeline diagram ── */
+  .pipeline-wrap {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 36px 24px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .pipeline-wrap svg {
+    display: block;
+    margin: 0 auto;
+    min-width: 680px;
+  }
+
+  /* ── Feature table ── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .feat-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    border: 1px solid var(--border);
+  }
+  .feat-card .feat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .feat-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .feat-card h3 { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .feat-card .feat-dims { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .feat-card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .feat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .tag {
+    background: #f1f5f9; border-radius: 5px;
+    padding: 3px 9px; font-size: 12px; color: var(--muted);
+    font-family: monospace;
+  }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 9px 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Result images ── */
+  .result-img {
+    display: block;
+    max-width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin: 0 auto;
+  }
+  .img-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 16px;
+  }
+  th {
+    background: #f8fafc;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+  .highlight-row td { background: #eff6ff; font-weight: 600; }
+  .highlight-row td:first-child { color: var(--accent); }
+  .val-good { color: var(--green); font-weight: 600; }
+  .val-mid  { color: var(--orange); font-weight: 600; }
+
+  /* ── Bar chart (cross-cell-line) ── */
+  .bar-chart { margin: 16px 0; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+  .bar-label { width: 100px; font-size: 14px; color: var(--text); text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: #e2e8f0; border-radius: 6px; height: 28px; position: relative; overflow: hidden; }
+  .bar-fill {
+    height: 100%; border-radius: 6px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 10px; font-size: 13px; font-weight: 700; color: white;
+    transition: width 0.8s ease;
+  }
+  .bar-ref { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+  .bar-other { background: linear-gradient(90deg, #10b981, #34d399); }
+
+  /* ── Conclusion ── */
+  .conclusion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .concl-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .concl-card .icon { font-size: 24px; margin-bottom: 10px; }
+  .concl-card h3 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .concl-card p { font-size: 14px; color: var(--muted); }
+
+  /* ── References ── */
+  .ref-list { list-style: none; }
+  .ref-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .ref-list li:last-child { border-bottom: none; }
+  .ref-list li strong { color: var(--text); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 32px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  /* ── Code highlight ── */
+  .inline-code {
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #0f172a;
+  }
+  .code-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-top: 16px;
+  }
+  .code-block .c { color: #64748b; }
+  .code-block .k { color: #38bdf8; }
+  .code-block .s { color: #a3e635; }
+
+  @media (max-width: 640px) {
+    .badges { flex-direction: column; align-items: center; }
+    .bar-label { width: 70px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ HEADER -->
+<header>
+  <div class="label">Computational Biology · Machine Learning</div>
+  <h1>Predicting Transcriptional Effects of<br>Cancer Driver Gene Perturbations</h1>
+  <p class="subtitle">
+    A multimodal classifier integrating protein language models, gene interaction networks,
+    and functional ontology to predict perturbation outcome directions across cancer cell lines.
+  </p>
+  <div class="badges">
+    <div class="badge">RF Accuracy <span>91.4%</span></div>
+    <div class="badge">Macro F1 <span>0.60</span></div>
+    <div class="badge">4 Cell Lines</div>
+    <div class="badge">649-dim Features</div>
+    <div class="badge">18,479 Genes</div>
+  </div>
+  <a href="https://github.com/ian4681/multimodal-gene-perturbation" class="btn">View on GitHub</a>
+  <a href="#results" class="btn btn-outline">Jump to Results</a>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════ OVERVIEW -->
+<section>
+  <h2><span class="num">1</span>Scientific Question</h2>
+  <div class="card" style="margin-bottom: 20px;">
+    <p style="font-size: 16px; line-height: 1.8; color: var(--text);">
+      Given a <strong>cancer cell line</strong>, a <strong>perturbed gene</strong> (e.g., TP53 knocked out),
+      and a <strong>target gene</strong>, predict whether the target gene is
+      <strong style="color:#10b981;">Up-regulated</strong>,
+      <strong style="color:#ef4444;">Down-regulated</strong>, or
+      <strong style="color:#94a3b8;">Non-differential</strong>
+      in the post-perturbation transcriptome.
+    </p>
+    <p style="font-size: 14px; color: var(--muted); margin-top: 12px;">
+      Data: PerturbQA from the AROMA benchmark — pooled single-cell CRISPR screens (Perturb-seq)
+      on K562 (leukemia), HepG2 (liver cancer), Jurkat (T-cell leukemia), and RPE1 (retinal epithelium) cell lines.
+      Label encoding: 0 = Non-diff, 1 = Down, 2 = Up. Class imbalance: ~87% / 4% / 9%.
+    </p>
+  </div>
+  <div class="overview-grid">
+    <div class="overview-card">
+      <h3>Training Cell Line</h3>
+      <div class="val">K562</div>
+      <div class="sub">Chronic myelogenous leukemia · ~157k gene pairs</div>
+    </div>
+    <div class="overview-card" style="border-left-color: #10b981;">
+      <h3>Test Cell Lines</h3>
+      <div class="val">3 Unseen</div>
+      <div class="sub">HepG2 · Jurkat · RPE1 (cross-cell-line generalization)</div>
+    </div>
+    <div class="overview-card" style="border-left-color: #f59e0b;">
+      <h3>Perturbation Types</h3>
+      <div class="val">CRISPRi</div>
+      <div class="sub">Gene knockdown via dCas9-KRAB, pooled screens</div>
+    </div>
+    <div class="overview-card" style="border-left-color: #8b5cf6;">
+      <h3>Prediction Classes</h3>
+      <div class="val">3-class</div>
+      <div class="sub">Up / Down / Non-differential expression</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ PIPELINE -->
+<section>
+  <h2><span class="num">2</span>Pipeline Overview</h2>
+  <div class="pipeline-wrap">
+    <svg viewBox="0 0 900 320" width="900" height="320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+        </marker>
+        <marker id="arrow-b" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#0ea5e9"/>
+        </marker>
+      </defs>
+
+      <!-- Data sources column -->
+      <!-- PerturbQA box -->
+      <rect x="10" y="30" width="160" height="52" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+      <text x="90" y="52" text-anchor="middle" font-size="12" font-weight="600" fill="#1e40af">PerturbQA</text>
+      <text x="90" y="70" text-anchor="middle" font-size="10.5" fill="#64748b">(pert, target) pairs + labels</text>
+
+      <!-- Gene graph box -->
+      <rect x="10" y="105" width="160" height="52" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+      <text x="90" y="127" text-anchor="middle" font-size="12" font-weight="600" fill="#166534">Gene Graph</text>
+      <text x="90" y="145" text-anchor="middle" font-size="10.5" fill="#64748b">STRING, 18,479 nodes</text>
+
+      <!-- UniProt+ESM box -->
+      <rect x="10" y="180" width="160" height="52" rx="8" fill="#fefce8" stroke="#fde68a" stroke-width="1.5"/>
+      <text x="90" y="202" text-anchor="middle" font-size="12" font-weight="600" fill="#92400e">UniProt + ESM-2</text>
+      <text x="90" y="220" text-anchor="middle" font-size="10.5" fill="#64748b">Human proteome + 8M model</text>
+
+      <!-- GO annotation box -->
+      <rect x="10" y="255" width="160" height="52" rx="8" fill="#fdf4ff" stroke="#e9d5ff" stroke-width="1.5"/>
+      <text x="90" y="277" text-anchor="middle" font-size="12" font-weight="600" fill="#6b21a8">GO Annotations</text>
+      <text x="90" y="295" text-anchor="middle" font-size="10.5" fill="#64748b">goa_human.gaf</text>
+
+      <!-- Feature extraction boxes -->
+      <!-- BFS -->
+      <rect x="240" y="105" width="145" height="52" rx="8" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.5"/>
+      <text x="312" y="127" text-anchor="middle" font-size="12" font-weight="600" fill="#0369a1">BFS Features</text>
+      <text x="312" y="145" text-anchor="middle" font-size="10.5" fill="#64748b">path length, degree · 5 dims</text>
+
+      <!-- ESM2 embed -->
+      <rect x="240" y="180" width="145" height="52" rx="8" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/>
+      <text x="312" y="202" text-anchor="middle" font-size="12" font-weight="600" fill="#b45309">ESM-2 Embedding</text>
+      <text x="312" y="220" text-anchor="middle" font-size="10.5" fill="#64748b">pert(320) + target(320) · 640</text>
+
+      <!-- GO features -->
+      <rect x="240" y="255" width="145" height="52" rx="8" fill="#fdf4ff" stroke="#e9d5ff" stroke-width="1.5"/>
+      <text x="312" y="277" text-anchor="middle" font-size="12" font-weight="600" fill="#7c3aed">GO Features</text>
+      <text x="312" y="295" text-anchor="middle" font-size="10.5" fill="#64748b">shared BP/MF/CC · 4 dims</text>
+
+      <!-- Arrows: data → features -->
+      <line x1="170" y1="56" x2="220" y2="131" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="170" y1="131" x2="240" y2="131" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="170" y1="206" x2="240" y2="206" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="170" y1="281" x2="240" y2="281" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- Fusion box -->
+      <rect x="460" y="155" width="145" height="62" rx="8" fill="#1a3060" stroke="#0ea5e9" stroke-width="2"/>
+      <text x="532" y="179" text-anchor="middle" font-size="12" font-weight="700" fill="white">Feature Fusion</text>
+      <text x="532" y="196" text-anchor="middle" font-size="11" fill="#7dd3fc">649-dim vector</text>
+      <text x="532" y="212" text-anchor="middle" font-size="10" fill="#94a3b8">per (pert, target) pair</text>
+
+      <!-- Arrows: features → fusion -->
+      <line x1="385" y1="131" x2="460" y2="174" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#arrow-b)"/>
+      <line x1="385" y1="206" x2="460" y2="193" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#arrow-b)"/>
+      <line x1="385" y1="281" x2="460" y2="210" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#arrow-b)"/>
+
+      <!-- RF classifier box -->
+      <rect x="680" y="105" width="190" height="72" rx="8" fill="#0f2044" stroke="#0ea5e9" stroke-width="2"/>
+      <text x="775" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="white">Random Forest</text>
+      <text x="775" y="148" text-anchor="middle" font-size="11" fill="#7dd3fc">100 trees · balanced weights</text>
+      <text x="775" y="165" text-anchor="middle" font-size="10" fill="#94a3b8">Acc 91.4% · Macro F1 0.60</text>
+
+      <!-- Arrow: fusion → RF -->
+      <line x1="605" y1="186" x2="680" y2="141" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arrow-b)"/>
+
+      <!-- Output labels -->
+      <rect x="690" y="210" width="70" height="30" rx="6" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+      <text x="725" y="230" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">Up</text>
+
+      <rect x="775" y="210" width="90" height="30" rx="6" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="820" y="230" text-anchor="middle" font-size="12" font-weight="700" fill="#991b1b">Down</text>
+
+      <rect x="683" y="252" width="105" height="30" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="735" y="272" text-anchor="middle" font-size="12" font-weight="600" fill="#475569">Non-diff</text>
+
+      <!-- Arrows: RF → outputs -->
+      <line x1="775" y1="177" x2="725" y2="210" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#arrow)"/>
+      <line x1="815" y1="177" x2="820" y2="210" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#arrow)"/>
+      <line x1="775" y1="177" x2="735" y2="252" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+      <!-- Step labels -->
+      <text x="90" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8">Data Sources</text>
+      <text x="312" y="95" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8">Feature Extraction</text>
+      <text x="532" y="148" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8">Fusion</text>
+      <text x="775" y="95" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8">Classifier</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ METHODS -->
+<section>
+  <h2><span class="num">3</span>Feature Engineering</h2>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-icon" style="background:#eff6ff;">🔗</div>
+        <div>
+          <h3>BFS Path Features</h3>
+          <div class="feat-dims">5 dimensions · from STRING gene interaction graph</div>
+        </div>
+      </div>
+      <p>
+        For each (perturbed gene, target gene) pair, we run single-source BFS from the
+        perturbed gene on the STRING-derived PPI graph (18,479 nodes) with cutoff=6.
+        Grouping by unique perturbed gene reduces BFS calls from 157k to ~hundreds.
+      </p>
+      <div class="feat-tags">
+        <span class="tag">path_length</span>
+        <span class="tag">is_direct_neighbor</span>
+        <span class="tag">n_common_neighbors</span>
+        <span class="tag">degree_pert</span>
+        <span class="tag">degree_gene</span>
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-icon" style="background:#fefce8;">🧬</div>
+        <div>
+          <h3>ESM-2 Protein Embeddings</h3>
+          <div class="feat-dims">640 dimensions · ESM-2 8M, frozen</div>
+        </div>
+      </div>
+      <p>
+        We pre-compute 320-dim mean-pooled embeddings for all 18,479 graph genes using
+        ESM-2 8M (facebook/esm2_t6_8M_UR50D), running on CPU with batch_size=32.
+        Each (pert, target) pair contributes one embedding per gene → 640 dims total.
+        98.7% coverage (234 genes missing in UniProt, zero-filled).
+      </p>
+      <div class="feat-tags">
+        <span class="tag">esm_pert_0..319</span>
+        <span class="tag">esm_gene_0..319</span>
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-icon" style="background:#fdf4ff;">📋</div>
+        <div>
+          <h3>GO Term Overlap</h3>
+          <div class="feat-dims">4 dimensions · Gene Ontology annotations</div>
+        </div>
+      </div>
+      <p>
+        For each gene pair, we count the number of shared GO terms across three
+        namespaces: Biological Process (BP), Molecular Function (MF), and
+        Cellular Component (CC). Parsed from goa_human.gaf using goatools.
+        NOT-qualified annotations are excluded.
+      </p>
+      <div class="feat-tags">
+        <span class="tag">n_shared_go_bp</span>
+        <span class="tag">n_shared_go_mf</span>
+        <span class="tag">n_shared_go_cc</span>
+        <span class="tag">n_shared_go_all</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ RESULTS -->
+<section id="results">
+  <h2><span class="num">4</span>Results</h2>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(event,'t-compare')">Model Comparison</button>
+    <button class="tab-btn" onclick="switchTab(event,'t-cm')">Confusion Matrix</button>
+    <button class="tab-btn" onclick="switchTab(event,'t-importance')">Feature Importance</button>
+    <button class="tab-btn" onclick="switchTab(event,'t-ablation')">Ablation Study</button>
+    <button class="tab-btn" onclick="switchTab(event,'t-cross')">Cross-Cell-Line</button>
+    <button class="tab-btn" onclick="switchTab(event,'t-gnn')">GNN Baseline</button>
+  </div>
+
+  <!-- Tab: Model Comparison -->
+  <div id="t-compare" class="tab-panel active">
+    <div class="card">
+      <h3 style="margin-bottom: 16px; color: var(--navy);">K562 Test Set — All Models</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Accuracy</th>
+            <th>Macro F1</th>
+            <th>Down Recall</th>
+            <th>Up Recall</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row">
+            <td>Random Forest</td>
+            <td class="val-good">91.4%</td>
+            <td class="val-good">0.60</td>
+            <td>18.0%</td>
+            <td>54.1%</td>
+            <td>100 trees, balanced weights</td>
+          </tr>
+          <tr>
+            <td>Logistic Regression</td>
+            <td class="val-mid">73.2%</td>
+            <td class="val-mid">0.36</td>
+            <td>—</td>
+            <td>—</td>
+            <td>saga solver, balanced weights</td>
+          </tr>
+          <tr>
+            <td>2-layer GAT (GNN)</td>
+            <td>70.1%</td>
+            <td>0.43</td>
+            <td>46.9%</td>
+            <td>44.4%</td>
+            <td>ESM-2 node features + GO edge feat</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 16px; font-size: 13px; color: var(--muted);">
+        <strong>Observation:</strong> Random Forest substantially outperforms both baselines on overall accuracy and Macro F1.
+        The GNN (GAT) achieves better Down-class recall (+29%) at the cost of overall accuracy,
+        showing that graph message passing benefits minority-class detection but sacrifices global performance.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab: Confusion Matrix -->
+  <div id="t-cm" class="tab-panel">
+    <div class="card">
+      <img src="results/cm_Random_Forest.png" alt="Random Forest Confusion Matrix" class="result-img" style="max-width: 480px;">
+      <p class="img-caption">
+        Random Forest confusion matrix on the K562 test set.<br>
+        Label encoding: 0 = Non-diff (87% of samples), 1 = Down (4%), 2 = Up (9%).
+        Class imbalance is addressed via <span class="inline-code">class_weight='balanced'</span>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab: Feature Importance -->
+  <div id="t-importance" class="tab-panel">
+    <div class="card">
+      <img src="results/feature_importance_RF.png" alt="Feature Importance" class="result-img">
+      <p class="img-caption">
+        Top 20 feature importances from the Random Forest classifier.<br>
+        <strong>degree_gene</strong> (network topology) ranks first,
+        followed by ESM-2 embedding dimensions of the target gene.
+        This suggests that a gene's network centrality and sequence properties
+        jointly determine its susceptibility to perturbation effects.
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab: Ablation Study -->
+  <div id="t-ablation" class="tab-panel">
+    <div class="card">
+      <img src="results/ablation_study.png" alt="Ablation Study" class="result-img">
+      <p class="img-caption">Ablation study — Macro F1, Down Recall, and Accuracy across 7 feature combinations.</p>
+      <table style="margin-top: 24px;">
+        <thead>
+          <tr>
+            <th>Feature Combination</th>
+            <th>Dims</th>
+            <th>Accuracy</th>
+            <th>Macro F1</th>
+            <th>Down Recall</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>BFS only</td>
+            <td>5</td>
+            <td>82.9%</td>
+            <td>0.454</td>
+            <td>13.1%</td>
+          </tr>
+          <tr>
+            <td>GO only</td>
+            <td>4</td>
+            <td>60.5%</td>
+            <td>0.336</td>
+            <td>33.6%</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><strong>ESM-2 only</strong></td>
+            <td>640</td>
+            <td class="val-good">91.6%</td>
+            <td class="val-good">0.615</td>
+            <td>18.0%</td>
+          </tr>
+          <tr>
+            <td>BFS + GO</td>
+            <td>9</td>
+            <td>84.7%</td>
+            <td>0.463</td>
+            <td>11.7%</td>
+          </tr>
+          <tr>
+            <td>BFS + ESM-2</td>
+            <td>645</td>
+            <td>91.6%</td>
+            <td>0.610</td>
+            <td>17.1%</td>
+          </tr>
+          <tr>
+            <td>GO + ESM-2</td>
+            <td>644</td>
+            <td>91.5%</td>
+            <td>0.612</td>
+            <td>17.7%</td>
+          </tr>
+          <tr>
+            <td>All (649)</td>
+            <td>649</td>
+            <td>91.4%</td>
+            <td>0.602</td>
+            <td>15.6%</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-top: 16px;">
+        <strong>Key finding:</strong> ESM-2 alone (640 dims, F1=0.615) nearly matches the full 649-dim model.
+        Adding BFS and GO features does not improve — and slightly degrades — overall performance.
+        This indicates that protein sequence information, captured by the pre-trained language model,
+        is the primary discriminative signal for predicting perturbation direction.
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Cross-Cell-Line -->
+  <div id="t-cross" class="tab-panel">
+    <div class="card">
+      <h3 style="margin-bottom: 8px; color: var(--navy);">Cross-Cell-Line Generalization</h3>
+      <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">
+        The K562-trained Random Forest is applied directly to three unseen cancer cell lines
+        without any retraining. Features are re-extracted for each cell line using the same
+        pre-computed ESM-2 embeddings and gene graph.
+      </p>
+
+      <div class="bar-chart">
+        <p style="font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Macro F1 Score</p>
+        <div class="bar-row">
+          <div class="bar-label">K562</div>
+          <div class="bar-track">
+            <div class="bar-fill bar-ref" style="width: 100%">0.60</div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Jurkat</div>
+          <div class="bar-track">
+            <div class="bar-fill bar-other" style="width: 88.3%">0.53</div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">RPE1</div>
+          <div class="bar-track">
+            <div class="bar-fill bar-other" style="width: 85%">0.51</div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">HepG2</div>
+          <div class="bar-track">
+            <div class="bar-fill bar-other" style="width: 81.7%">0.49</div>
+          </div>
+        </div>
+      </div>
+
+      <table style="margin-top: 20px;">
+        <thead>
+          <tr>
+            <th>Cell Line</th>
+            <th>Cancer Type</th>
+            <th>Accuracy</th>
+            <th>Macro F1</th>
+            <th>vs. K562 (∆F1)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row">
+            <td>K562</td>
+            <td>Leukemia (CML)</td>
+            <td class="val-good">91.4%</td>
+            <td class="val-good">0.60</td>
+            <td>— reference —</td>
+          </tr>
+          <tr>
+            <td>Jurkat</td>
+            <td>T-cell leukemia</td>
+            <td>—</td>
+            <td class="val-mid">0.53</td>
+            <td>−0.07</td>
+          </tr>
+          <tr>
+            <td>RPE1</td>
+            <td>Retinal epithelium</td>
+            <td>—</td>
+            <td class="val-mid">0.51</td>
+            <td>−0.09</td>
+          </tr>
+          <tr>
+            <td>HepG2</td>
+            <td>Hepatocellular carcinoma</td>
+            <td>—</td>
+            <td class="val-mid">0.49</td>
+            <td>−0.11</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 16px; font-size: 13px; color: var(--muted);">
+        <strong>Interpretation:</strong> Macro F1 drops by 0.07–0.11 when transferring across cell types.
+        The model generalizes reasonably — predictions are not random (a random classifier would achieve ~0.33) —
+        but cell-line-specific transcriptional context is clearly not captured by sequence-level features alone.
+        Future work: condition on cell-line expression profiles (e.g., DepMap CCLE baselines as 50-dim PCA embeddings).
+      </p>
+    </div>
+  </div>
+
+  <!-- Tab: GNN -->
+  <div id="t-gnn" class="tab-panel">
+    <div class="card">
+      <h3 style="margin-bottom: 16px; color: var(--navy);">Graph Attention Network (2-layer GAT)</h3>
+      <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">
+        As an alternative to the Random Forest baseline, we train a Graph Attention Network
+        directly on the PPI graph to learn context-aware gene representations.
+        Each node's initial feature is its ESM-2 320-dim embedding;
+        pair-level GO features are appended after graph encoding.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div>
+          <p style="font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">ARCHITECTURE</p>
+          <div class="code-block">
+<span class="c"># Node features: ESM-2 320-dim</span>
+GAT-1: 320 → 128  <span class="c">(4 heads × 32)</span>
+GAT-2: 128 → 64   <span class="c">(1 head)</span>
+MLP: <span class="c">concat(pert[64], gene[64], GO[4])</span>
+  → 128 → 64 → <span class="k">3 classes</span>
+Dropout: 0.3  |  LR: 1e-3  |  WD: 1e-4
+          </div>
+        </div>
+        <div>
+          <p style="font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">RESULTS vs. RF</p>
+          <table>
+            <thead>
+              <tr><th>Metric</th><th>GAT</th><th>RF (ref)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Accuracy</td><td>70.1%</td><td class="val-good">91.4%</td></tr>
+              <tr><td>Macro F1</td><td>0.43</td><td class="val-good">0.60</td></tr>
+              <tr><td>Down Recall</td><td class="val-good">46.9%</td><td>18.0%</td></tr>
+              <tr><td>Up Recall</td><td>44.4%</td><td class="val-good">54.1%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px;">
+        <strong>Analysis:</strong> The GAT model achieves significantly better recall on the minority Down class
+        (47% vs 18%), suggesting that graph-level neighborhood information helps identify
+        directly regulated downstream targets. However, overall accuracy drops 21 percentage points,
+        likely due to the difficulty of training a graph neural network on a severely imbalanced
+        classification task with CPU-only compute. The RF's lower Down recall reflects
+        its reliance on static, pre-extracted features rather than learned representations.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ CONCLUSION -->
+<section>
+  <h2><span class="num">5</span>Discussion &amp; Future Directions</h2>
+  <div class="conclusion-grid">
+    <div class="concl-card">
+      <div class="icon">🧠</div>
+      <h3>ESM-2 Dominates</h3>
+      <p>Protein sequence embeddings explain almost all model performance. Network topology (BFS) and functional annotation (GO) contribute negligible additional signal, pointing to sequence-encoded regulatory constraints as the key determinant of perturbation direction.</p>
+    </div>
+    <div class="concl-card">
+      <div class="icon">📊</div>
+      <h3>Cell-Line Context Gap</h3>
+      <p>Cross-cell-line F1 drops 0.07–0.11 — the model lacks cell-type-specific transcriptional context. The fix: augment features with baseline expression profiles (DepMap CCLE PCA embeddings, ~50 dims) to condition predictions on cell state.</p>
+    </div>
+    <div class="concl-card">
+      <div class="icon">🏗️</div>
+      <h3>GNN Tradeoff</h3>
+      <p>The 2-layer GAT sacrifices global accuracy for minority-class recall. A hybrid approach — RF for common cases, GNN for rare Down predictions — could combine both strengths. Alternatively, fine-tuning a larger ESM-2 variant on perturbation data.</p>
+    </div>
+    <div class="concl-card">
+      <div class="icon">🔬</div>
+      <h3>Clinical Validation</h3>
+      <p>Model predictions can be biologically validated using TCGA patient cohorts: genes predicted as "Down" targets of driver LOF mutations should show systematically lower expression in patients harboring those mutations (Mann-Whitney + FDR correction).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ REFERENCES -->
+<section>
+  <h2><span class="num">6</span>References &amp; Data Sources</h2>
+  <ul class="ref-list">
+    <li>
+      <strong>AROMA (PerturbQA + Gene-KG)</strong><br>
+      Wang et al. (2026). AROMA: Towards Reasoning-centric Omics Modeling and Analysis. <em>Tencent AI Lab</em>.
+      &nbsp;·&nbsp; Perturb-seq data: K562, HepG2, Jurkat, RPE1 cell lines.
+    </li>
+    <li>
+      <strong>ESM-2 Protein Language Model</strong><br>
+      Lin et al. (2023). Evolutionary-scale prediction of atomic-level protein structure with a language model.
+      <em>Science</em>, 379(6637), 1123–1130. &nbsp;·&nbsp;
+      Model: <span class="inline-code">facebook/esm2_t6_8M_UR50D</span>
+    </li>
+    <li>
+      <strong>GenePT (conceptual baseline)</strong><br>
+      Chen &amp; Zou (2024). GenePT: Using Large Language Model GPT as a Foundation Model for Gene Expression Prediction.
+      <em>Nature Methods</em>.
+    </li>
+    <li>
+      <strong>STRING Gene Interaction Graph</strong><br>
+      Szklarczyk et al. (2023). The STRING database in 2023. <em>Nucleic Acids Research</em>.
+      &nbsp;·&nbsp; Graph pre-built and distributed with AROMA.
+    </li>
+    <li>
+      <strong>Gene Ontology</strong><br>
+      The Gene Ontology Consortium (2023). <em>Genetics</em>.
+      &nbsp;·&nbsp; Annotations: <span class="inline-code">goa_human.gaf.gz</span> from geneontology.org.
+    </li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p>Cancer Gene Perturbation Prediction · Code and results available on GitHub</p>
+  <p style="margin-top: 4px;">Built with Python · scikit-learn · PyTorch Geometric · ESM-2 · AROMA benchmark data</p>
+</footer>
+
+<script>
+  function switchTab(evt, tabId) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    evt.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

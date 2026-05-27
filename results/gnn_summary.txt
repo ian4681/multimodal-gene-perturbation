@@ -1,0 +1,15 @@
+GNN (2-layer GAT) Results
+
+Accuracy : 0.7005  [RF baseline: 0.9141]
+Macro F1 : 0.4345  [RF baseline: 0.6021]
+Best epoch: 100
+
+              precision    recall  f1-score   support
+
+    Non-diff     0.9486    0.7396    0.8312     20093
+        Down     0.0875    0.4686    0.1474       589
+          Up     0.2560    0.4443    0.3249      2530
+
+    accuracy                         0.7005     23212
+   macro avg     0.4307    0.5508    0.4345     23212
+weighted avg     0.8513    0.7005    0.7586     23212
